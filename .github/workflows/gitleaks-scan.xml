@@ -1,0 +1,40 @@
+name: Gitleaks Scan
+
+# Controls when the workflow will run
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    
+  
+permissions:
+  contents: read
+  id-token: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout repository'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # fetch-depth 0 is important to scan the entire history
+
+      - name: 'Gitleaks Action'
+        # Official action for running Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        id: gitleaks
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: true
+
+      - name: 'Check Scan Results'
+        if: steps.gitleaks.outcome == 'failure'
+        run: |
+          echo " XXXXXXX Gtileask detected secrets in your code"
+          exit 1
+        
